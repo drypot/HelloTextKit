@@ -9,9 +9,16 @@ import SwiftUI
 
 @main
 struct HelloTextKitApp: App {
+    @State private var settings = AppSettings.shared
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
+        Settings {
+            SettingsView()
+                .environment(settings)
+        }
     }
 }
+
