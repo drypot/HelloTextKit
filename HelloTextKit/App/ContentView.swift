@@ -8,14 +8,34 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State var attributedString: AttributedString = ""
+    enum Menu: String, CaseIterable, Identifiable {
+        case text = "Text"
+        case textEditor = "TextEditor"
+
+        var id: String { self.rawValue }
+    }
+
+    @State private var selectedMenu: Menu = .text
+    @State private var attributedString: AttributedString = ""
 
     var body: some View {
-        VStack {
-            Text(attributedString)
-            TextEditor(text: $attributedString)
+        NavigationSplitView {
+            List(Menu.allCases, selection: $selectedMenu) { menu in
+                NavigationLink(value: menu) {
+                    Text(menu.rawValue)
+                }
+            }
+            .navigationTitle("Hello TextKit")
+        } detail: {
+            switch selectedMenu {
+            case .text:
+                Text(attributedString)
+                    .padding()
+            case .textEditor:
+                TextEditor(text: $attributedString)
+                    .padding()
+            }
         }
-        .padding()
         .onAppear {
             attributedString = loadRTF()
         }
