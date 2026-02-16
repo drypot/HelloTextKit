@@ -10,27 +10,42 @@ import SwiftUI
 
 struct CustomTextEditor: NSViewRepresentable {
     @Binding var text: String
+
     @Environment(SettingsModel.self) var settings
 
     func makeNSView(context: Context) -> NSScrollView {
-        let textView = TextViewFactory.makeTextView()
-        textView.typingAttributes = makeAttr()
-        let scrollView = TextViewFactory.makeScrollView(textView)
+        let textView = makeTextView()
+        let scrollView = makeScrollView(for: textView)
 
-//        TextViewFactory.configureForNoWrap(textView, scrollView)
-//        textView.delegate = context.coordinator
-
-//        updateTextViewString(textView)
+        // configureForNoWrap(textView, scrollView)
+        textView.delegate = context.coordinator
+//        textView.string = text
 
         return scrollView
     }
 
     func updateNSView(_ nsView: NSScrollView, context: Context) {
-        if let textView = nsView.documentView as? NSTextView {
-            updateTextViewString(textView)
+        guard let textView = nsView.documentView as? NSTextView else { return }
+
+        if textView.string != text {
+            textView.string = text
         }
+
+        guard let font = NSFont(name: settings.fontName, size: settings.fontSize) else { return }
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = settings.lineSpacing
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .paragraphStyle: paragraphStyle
+        ]
+
+        textView.typingAttributes = attributes
+        textView.textStorage?.setAttributes(attributes, range: NSRange(location: 0, length: textView.string.count))
     }
 
+    /*
     func makeAttr() -> [NSAttributedString.Key : Any] {
         let defautFont = NSFont.systemFont(ofSize: settings.fontSize)
         let font = NSFont(name: settings.fontName, size: settings.fontSize) ?? defautFont
@@ -63,13 +78,73 @@ struct CustomTextEditor: NSViewRepresentable {
 
         return attr
     }
+     */
 
-    func updateTextViewString(_ textView: NSTextView) {
-        textView.string = text
+    func makeTextView() -> NSTextView {
+        let layoutManager = NSTextLayoutManager()
+        let textContainer = NSTextContainer()
+        layoutManager.textContainer = textContainer
+        let contentStorage = NSTextContentStorage()
+        contentStorage.addTextLayoutManager(layoutManager)
+        // let textStorage = contentStorage.textStorage!
+
+        let textView = NSTextView(frame: .zero, textContainer: textContainer)
+
+        textView.autoresizingMask = [.width, .height] // 필수다.
+        // textView.textContainerInset = NSSize(width: 8, height: 8) // 패딩
+
+        textView.isEditable = true
+        textView.isSelectable = true
+
+        textView.isRichText = false
+        textView.importsGraphics = false
+
+        // 사용자 입력에 따라 컨트롤이 계속 커지게 만들려면 true.
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false // **
+        textView.maxSize = NSSize(
+            width: CGFloat.greatestFiniteMagnitude,
+            height: CGFloat.greatestFiniteMagnitude
+        )
+
+        // Wrap 모드면 true
+        textContainer.widthTracksTextView = true // **
+        textContainer.size = NSSize(
+            width: CGFloat.greatestFiniteMagnitude,
+            height: CGFloat.greatestFiniteMagnitude
+        )
+
+        return textView
     }
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+    func makeScrollView(for textView: NSView) -> NSScrollView {
+        let scrollView = NSScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.documentView = textView
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        return scrollView
+    }
+
+    func configureForNoWrap(_ textView: NSTextView, _ scrollView: NSScrollView) {
+        let textContainer = textView.textContainer!
+
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = true // **
+
+        textContainer.widthTracksTextView = false
+
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = true // **
+    }
+
+    func configureForNoScroller(_ textView: NSTextView) {
+        let textContainer = textView.textContainer!
+
+        textView.isVerticallyResizable = false // **
+        textView.isHorizontallyResizable = false
+
+        textContainer.widthTracksTextView = false // **
     }
 
     class Coordinator: NSObject, NSTextViewDelegate {
@@ -79,8 +154,13 @@ struct CustomTextEditor: NSViewRepresentable {
             self.view = view
         }
 
-        func textViewDidChange(_ textView: NSTextView) {
+        func textDidChange(_ notification: Notification) {
+            guard let textView = notification.object as? NSTextView else { return }
             self.view.text = textView.string
         }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        return Coordinator(self)
     }
 }

@@ -11,6 +11,7 @@ struct ContentView: View {
     enum Menu: String, CaseIterable, Identifiable {
         case text = "Text"
         case textEditor = "TextEditor"
+        case customTextEditor = "CustomTextEditor"
 
         var id: String { self.rawValue }
     }
@@ -40,6 +41,9 @@ struct ContentView: View {
                 TextEditor(text: $sampleString)
                     .font(.custom(settings.fontName, size: settings.fontSize))
                     .lineSpacing(settings.lineSpacing)
+                    .padding()
+            case .customTextEditor:
+                CustomTextEditor(text: $sampleString)
                     .padding()
             }
         }
