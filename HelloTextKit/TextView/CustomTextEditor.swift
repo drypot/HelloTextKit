@@ -10,7 +10,7 @@ import SwiftUI
 
 struct CustomTextEditor: NSViewRepresentable {
     @Binding var text: String
-    @Environment(AppSettings.self) var settings
+    @Environment(SettingsModel.self) var settings
 
     func makeNSView(context: Context) -> NSScrollView {
         let textView = TextViewFactory.makeTextView()

@@ -16,7 +16,10 @@ struct ContentView: View {
     }
 
     @State private var selectedMenu: Menu = .text
-    @State private var attributedString: AttributedString = ""
+    @State private var sampleAttrString: AttributedString = ""
+    @State private var sampleString: String = ""
+
+    @Environment(SettingsModel.self) var settings
 
     var body: some View {
         NavigationSplitView {
@@ -29,33 +32,52 @@ struct ContentView: View {
         } detail: {
             switch selectedMenu {
             case .text:
-                Text(attributedString)
+                Text(sampleString)
+                    .font(.custom(settings.fontName, size: settings.fontSize))
+                    .lineSpacing(settings.lineSpacing)
                     .padding()
             case .textEditor:
-                TextEditor(text: $attributedString)
+                TextEditor(text: $sampleString)
+                    .font(.custom(settings.fontName, size: settings.fontSize))
+                    .lineSpacing(settings.lineSpacing)
                     .padding()
             }
         }
         .onAppear {
-            attributedString = loadRTF()
+            // sampleAttrString = loadRTF()
+            sampleString = loadSampleText()
         }
     }
 
     func loadRTF() -> AttributedString {
-        guard let url = Bundle.main.url(forResource: "menu", withExtension: "rtf"),
-              let data = try? Data(contentsOf: url) else {
+        guard let url = Bundle.main.url(forResource: "menu", withExtension: "rtf") else {
             return AttributedString("file not found.")
         }
 
-        if let nsString = try? NSAttributedString(
-            data: data,
-            options: [.documentType: NSAttributedString.DocumentType.rtf],
-            documentAttributes: nil
-        ) {
+        do {
+            let data = try Data(contentsOf: url)
+            let nsString = try NSAttributedString(
+                data: data,
+                options: [.documentType: NSAttributedString.DocumentType.rtf],
+                documentAttributes: nil
+            )
             return AttributedString(nsString)
+        } catch {
+            return AttributedString("file loading failed.")
+        }
+    }
+
+    func loadSampleText() -> String {
+        guard let url = Bundle.main.url(forResource: "sample", withExtension: "txt") else {
+            return "file not found."
         }
 
-        return AttributedString("file loading failed.")
+        do {
+            let contents = try String(contentsOf: url, encoding: .utf8)
+            return contents
+        } catch {
+            return "file loading failed."
+        }
     }
 }
 

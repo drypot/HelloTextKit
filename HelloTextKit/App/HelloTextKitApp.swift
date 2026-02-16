@@ -9,11 +9,12 @@ import SwiftUI
 
 @main
 struct HelloTextKitApp: App {
-    @State private var settings = AppSettings.shared
+    @State private var settings = SettingsModel()
     
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(settings)
         }
         Settings {
             SettingsView()

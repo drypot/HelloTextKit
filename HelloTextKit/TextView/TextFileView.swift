@@ -11,7 +11,7 @@ struct TextFileView: View {
     let url: URL?
     @State private var content: String = "..."
 
-    @Environment(AppSettings.self) var settings
+    @Environment(SettingsModel.self) var settings
 
     var body: some View {
 //        ScrollView {
